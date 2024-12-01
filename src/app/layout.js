@@ -24,8 +24,18 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        {/* Navigation */}
+        <nav className="fixed w-full z-50 transition-all duration-300 bg-white shadow-lg ">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-center md:justify-between items-center h-16">
+              <div className="flex-shrink-0">
+                <span className="text-2xl font-bold text-blue-600">InventoryPro</span>
+              </div>
+            </div>
+          </div>
+        </nav>
         <InventoryProvider>
-        {children}
+          {children}
         </InventoryProvider>
       </body>
     </html>

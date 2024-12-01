@@ -3,12 +3,13 @@ import React, { createContext, useContext, useEffect, useReducer } from 'react';
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp, onSnapshot, collection, query, orderBy } from 'firebase/firestore';
 import { auth, firestore } from '../firebase';
-import { addShop, addCustomer, addSale, addPayment, updatePayments } from '../models/firebaseUserData';
+import { addShop, addCustomer, addPayment, updatePayments, updateDue } from '../models/firebaseUserData';
 // Initial State
 const initialState = {
     user: {},
     shop: 'default',
     customer: 'default',
+    customerList: [],
     inventory: '',
     Payments: [],
     totalPayments: {
@@ -62,11 +63,22 @@ const inventoryReducer = (state, action) => {
                 inventory: updatedDebitArray,
                 Payments: updatedCreditArray,
             };
-
         case 'ADD_USER': {
             return {
                 ...state,
                 user: action.payload
+            }
+        }
+        case 'ADD_CUSTOMER_LIST': {
+            return {
+                ...state,
+                customerList: action.payload
+            }
+        }
+        case 'SELECT_CUSTOMER': {
+            return {
+                ...state,
+                customer: action.payload
             }
         }
         default:
@@ -90,18 +102,6 @@ export const InventoryProvider = ({ children }) => {
     };
 
     const updatePayment = () => {
-        // // Sum up all debits
-        // const totalDebits = state.Payments
-        //     .filter(item => item.type === 'debit') // Filtering debits
-        //     .reduce((sum, debit) => sum + debit.sale, 0);
-
-        // // Sum up all credits
-        // const totalCredits = state.Payments
-        //     .filter(item => item.type === 'credit') // Filtering credits
-        //     .reduce((sum, credit) => sum + credit.payment, 0);
-
-        // // const remainingAmount = totalDebits - totalCredits;
-
         const totals = state.Payments.reduce(
             (acc, item) => {
                 if (item.type === 'debit') {
@@ -127,10 +127,16 @@ export const InventoryProvider = ({ children }) => {
         });
     };
 
-
     const storePayment = (amount) => {
         dispatch({ type: 'ADD_PAYMENT', payload: amount });
     };
+    const storeCustomerList = (i) => {
+        dispatch({ type: 'ADD_CUSTOMER_LIST', payload: i });
+    };
+
+    const selectCustomer = (i) => {
+        dispatch({ type: 'SELECT_CUSTOMER', payload: i })
+    }
 
     function convertTimestampToDate(timestampInSeconds) {
         // Convert seconds to milliseconds
@@ -146,10 +152,46 @@ export const InventoryProvider = ({ children }) => {
         return formattedDate;
     }
 
+    const timeFromNow = (timestamp) => {
+        if (!timestamp) return "Invalid date";
+
+        // Convert Firestore Timestamp to JavaScript Date
+        const date = timestamp.toDate();
+        const now = Date.now();
+
+        // Calculate the difference in milliseconds
+        const diffInMs = now - date.getTime();
+
+        // Convert the difference to seconds
+        const diffInSeconds = Math.floor(diffInMs / 1000);
+
+        // Determine the appropriate unit
+        if (diffInSeconds < 60) {
+            return `${diffInSeconds} seconds ago`;
+        } else if (diffInSeconds < 3600) {
+            const diffInMinutes = Math.floor(diffInSeconds / 60);
+            return `${diffInMinutes} minutes ago`;
+        } else if (diffInSeconds < 86400) {
+            const diffInHours = Math.floor(diffInSeconds / 3600);
+            return `${diffInHours} hours ago`;
+        } else {
+            const diffInDays = Math.floor(diffInSeconds / 86400);
+            return `${diffInDays} days ago`;
+        }
+    };
+
     useEffect(() => {
         updatePayment()
+
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [state.Payments])
+    
+    useEffect(() => {
+        if (state.user?.uid !== undefined) {
+            handleCustomerUpdate(state.totalPayments.remain)
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [state.totalPayments])
 
     const siplexTxn = (i) => {
         // Select the debit and credit objects you want to adjust
@@ -253,8 +295,11 @@ export const InventoryProvider = ({ children }) => {
         // setShopName(''); // Clear the input field
     };
     const handleAddCustomer = async (i) => {
-        await addCustomer();
-        setShopName(''); // Clear the input field
+        console.log(i)
+        await addCustomer(state.user.uid, state.shop, i);
+    };
+    const handleCustomerUpdate = async (i) => {
+        await updateDue(state.user.uid, state.shop, state.customer, i);
     };
     const handlePayment = async (i) => {
         await addPayment(state.user.uid, state.shop, state.customer, i);
@@ -274,9 +319,20 @@ export const InventoryProvider = ({ children }) => {
             storePayment(paymentsList); // Dispatch to Redux store
         });
     };
+    const listenToCustomerList = () => {
+        const paymentsRef = query(collection(firestore, `users/${state.user.uid}/shops/${state.shop}/customers`), orderBy('lastUpdated', 'desc')) // Sort by timestamp in descending order );
+
+        return onSnapshot(paymentsRef, (snapshot) => {
+            const customerList = snapshot.docs.map((doc) => ({
+                id: doc.id,
+                ...doc.data(),
+            }));
+            storeCustomerList(customerList); // Dispatch to Redux store
+        });
+    };
     return (
         <InventoryContext.Provider
-            value={{ ...state, addItem, updatePayment, convertTimestampToDate, addPayment, siplexTxn, addUser, fetchUser, handleGoogleSignIn, handleAddShop, handleAddCustomer, handlePayment, listenToCustomerPayments }}
+            value={{ ...state, addItem, updatePayment, convertTimestampToDate, addPayment, siplexTxn, addUser, fetchUser, handleGoogleSignIn, handleAddShop, handleAddCustomer, handlePayment, listenToCustomerPayments, listenToCustomerList, timeFromNow, selectCustomer, handleCustomerUpdate }}
         >
             {children}
         </InventoryContext.Provider>

@@ -7,6 +7,12 @@ export const images = {
             port: '',
             pathname: '**', // Use '**' to match any path on this hostname
         },
+        {
+            protocol: 'https',
+            hostname: 'images.unsplash.com',
+            port: '',
+            pathname: '**', // Use '**' to match any path on this hostname
+        },
     ],
 };
   

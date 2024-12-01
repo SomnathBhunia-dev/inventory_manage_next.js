@@ -1,5 +1,5 @@
 // lib/firebaseUserData.js
-import { collection, doc, setDoc, addDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { collection, doc, addDoc, serverTimestamp, updateDoc, query, where, getDocs, getDoc } from 'firebase/firestore';
 import { firestore } from '../firebase';
 
 // Add Shop Function
@@ -16,27 +16,46 @@ export const addShop = async (userId, shopName) => {
 };
 
 // Add Customer Function
-export const addCustomer = async (userId, shopId, customerName) => {
+export const addCustomer = async (userId, shopId, customerNameObj) => {
   try {
     const customerRef = collection(firestore, `users/${userId}/shops/${shopId}/customers`);
-    await addDoc(customerRef, {
-      name: customerName,
-    });
-  } catch (error) {
-    console.error('Error adding customer:', error);
-  }
-};
 
-// Add Sale Function
-export const addSale = async (userId, shopId, customerId, amount) => {
-  try {
-    const salesRef = collection(firestore, `users/${userId}/shops/${shopId}/customers/${customerId}/sales`);
-    await addDoc(salesRef, {
-      amount,
-      date: serverTimestamp(),
+    // Query for customers with names starting with the base name
+    const q = query(customerRef, where("name", ">=", customerNameObj.name.trim()), where("name", "<=", customerNameObj.name.trim() + "\uf8ff"));
+    const querySnapshot = await getDocs(q);
+
+    let finalName = customerNameObj.name.trim();
+
+    // Generate a unique name by appending a number if matches are found
+    if (!querySnapshot.empty) {
+      const existingNames = querySnapshot.docs.map((doc) => doc.data().name);
+      let suffix = 1;
+
+      // Keep incrementing the suffix until a unique name is found
+      while (existingNames.includes(`${customerNameObj.name.trim()}-${suffix}`)) {
+        suffix++;
+      }
+      finalName = `${customerNameObj.name.trim()}-${suffix}`;
+    }
+
+    // Add the new customer with the unique name
+    await addDoc(customerRef, {
+      name: finalName,
+      contact: customerNameObj.contact || "",
+      Fund: customerNameObj.Fund || "",
+      lastUpdated: serverTimestamp(),
     });
+
+    return {
+      status: "success",
+      message: `Customer "${finalName}" added successfully.`,
+    };
   } catch (error) {
-    console.error('Error adding sale:', error);
+    console.error("Error adding customer:", error);
+    return {
+      status: "error",
+      message: "An error occurred while adding the customer. Please try again.",
+    };
   }
 };
 
@@ -70,5 +89,36 @@ export const updatePayments = async (userId, shopId, customerId, paymentsList) =
     console.log('All payments updated successfully');
   } catch (error) {
     console.error('Error updating payments:', error);
+  }
+};
+
+export const updateDue = async (userId, shopId, customerId, due) => {
+  try {
+    const customerRef = doc(firestore, `users/${userId}/shops/${shopId}/customers`, customerId);
+
+    // Fetch the current document
+    const docSnapshot = await getDoc(customerRef);
+
+    if (docSnapshot.exists()) {
+      const currentData = docSnapshot.data();
+
+      // Check if the current due is already the same
+      if (currentData.Fund === due) {
+        console.log("No update needed. Due amount is already correct.");
+        return Promise.resolve("No update needed");
+      }
+    }
+
+    // Perform the update if the due amount is different
+    await updateDoc(customerRef, {
+      Fund: due,
+      lastUpdated: serverTimestamp(),
+    });
+
+    console.log("Due amount updated successfully.");
+    return Promise.resolve("Updated successfully");
+  } catch (error) {
+    console.error("Error updating due:", error);
+    return Promise.reject(error);
   }
 };
