@@ -4,7 +4,7 @@ import { useInventory } from '../context/InventoryContext'
 import Sum from './Sum'
 
 const List = () => {
-    const { inventory, Payments, totalPayments, siplexTxn, convertTimestampToDate } = useInventory()
+    const { Payments, siplexTxn, convertTimestampToDate } = useInventory()
     const [selectedTxn, setselectedTxn] = useState([])
 
     const toggleSelectTransaction = (transaction) => {
