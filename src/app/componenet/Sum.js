@@ -9,9 +9,9 @@ export default function Sum() {
         {/* Left Section */}
         <div className="flex flex-col items-start">
           <div className="text-gray-500 text-xs sm:text-sm">Total Sale</div>
-          <div className="text-base sm:text-xl font-bold">{debit}</div>
+          <div className="text-base sm:text-xl font-bold text-black">{debit}</div>
           <div className="text-gray-500 text-xs sm:text-sm mt-2">Total Payment</div>
-          <div className="text-base sm:text-xl font-bold">{credit}</div>
+          <div className="text-base sm:text-xl font-bold text-black">{credit}</div>
         </div>
 
         {/* Divider */}

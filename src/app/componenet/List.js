@@ -27,7 +27,7 @@ const List = () => {
         <div className="py-4 px-4 md:p-4 bg-white shadow-md rounded-lg max-w-4xl mx-auto">
             <Sum />
             <div className="flex flex-row justify-between items-center mb-4">
-                <h2 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-0">Sales</h2>
+                <h2 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-0 text-black ">Sales</h2>
                 {selectedTxn?.length !== 0 && (
                     <button
                         className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-200"
