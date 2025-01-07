@@ -63,10 +63,20 @@ export const addCustomer = async (userId, shopId, customerNameObj) => {
 export const addPayment = async (userId, shopId, customerId, amount) => {
   try {
     const paymentsRef = collection(firestore, `users/${userId}/shops/${shopId}/customers/${customerId}/payments`);
-    await addDoc(paymentsRef, {
-      ...amount,
-      date: serverTimestamp(),
-    });
+    if (amount.id) {
+      // Update existing document
+      const docRef = doc(firestore, `users/${userId}/shops/${shopId}/customers/${customerId}/payments/${amount.id}`);
+      await updateDoc(docRef, {
+        ...amount,
+      });
+      console.log("Document updated successfully");
+    } else {
+      await addDoc(paymentsRef, {
+        ...amount,
+        date: serverTimestamp(),
+      });
+      console.log("Document added successfully");
+    }
   } catch (error) {
     console.error('Error adding payment:', error);
   }
@@ -76,11 +86,12 @@ export const updatePayments = async (userId, shopId, customerId, paymentsList) =
 
   try {
     // Create an array of promises, one for each update operation
-    const updatePromises = paymentsList.map(({ id, status, remaining }) => {
+    const updatePromises = paymentsList.map(({ id, status, remaining, style }) => {
       const paymentRef = doc(firestore, `users/${userId}/shops/${shopId}/customers/${customerId}/payments`, id);
       return updateDoc(paymentRef, {
         'status': status,
         'remaining': remaining,
+        'style': style
       });
     });
 
@@ -122,3 +133,27 @@ export const updateDue = async (userId, shopId, customerId, due) => {
     return Promise.reject(error);
   }
 };
+
+// const saveData = async (userId, shopId, data) => {
+//   const collectionRef = collection(firestore, `users/${userId}/shops/${shopId}/customers`);
+//   try {
+//     if (data.id) {
+//       // Update existing document
+//       const docRef = doc(firestore, `users/${userId}/shops/${shopId}/customers/${data.id}`);
+//       await updateDoc(docRef, {
+//         ...data,
+//         lastUpdated: serverTimestamp(),
+//       });
+//       console.log("Document updated successfully");
+//     } else {
+//       // Add new document
+//       await addDoc(collectionRef, {
+//         ...data,
+//         lastUpdated: serverTimestamp(),
+//       });
+//       console.log("Document added successfully");
+//     }
+//   } catch (error) {
+//     console.error("Error saving data:", error);
+//   }
+// };

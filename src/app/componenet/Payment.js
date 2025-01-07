@@ -3,25 +3,31 @@
 import React, { useState } from 'react';
 import { useInventory } from '../context/InventoryContext';
 
-const Payment = ({ onClose}) => {
+const Payment = ({ onClose, updateItem = {} }) => {
     const { handlePayment } = useInventory();
-    const [amount, setAmount] = useState('');
-    const [description, setDescription] = useState("");
+    const [amount, setAmount] = useState(updateItem.amount || "");
+    const [description, setDescription] = useState(updateItem.description || "");
+
     const handlePaymentStore = (e) => {
         e.preventDefault();
         handlePayment({
-            payment: Number(amount),
+            ...(updateItem?.id ? { id: updateItem.id } : {}),
+            amount: Number(amount),
             description,
             status: 'Received',
             remaining: Number(amount),
-            type: 'credit'
+            type: 'credit',
+            style: {
+                bgStyle: 'bg-green-200',
+                textStyle: 'text-green-700'
+            }
         });
         setAmount('');
         onClose()
     };
 
     return (
-        <form onSubmit={handlePaymentStore} className="mb-4 p-4 bg-white shadow-md rounded-lg max-w-md mx-auto">
+        <form onSubmit={handlePaymentStore} className="mb-4 p-4 bg-white text-gray-700 shadow-md rounded-lg max-w-md mx-auto">
             <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                     Payment Amount

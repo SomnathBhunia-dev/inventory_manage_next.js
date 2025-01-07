@@ -1,5 +1,4 @@
 import React from "react";
-import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin } from "react-icons/fa";
 import Link from 'next/link';
 import Image from "next/image";
 
@@ -69,8 +68,8 @@ export default function page() {
                                     <Image
                                         src={`https://${item.image}`}
                                         alt={item.title}
-                                        width={500} // Set your desired width
-                                        height={500} // Set your desired height
+                                        width={500} 
+                                        height={500}
                                         className="w-full h-full object-cover"
                                     />
                                 </div>
@@ -83,29 +82,6 @@ export default function page() {
                     </div>
                 </div>
             </div>
-
-            {/* Footer */}
-            <footer className="bg-gray-900">
-                <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-center space-x-6">
-                        <a href="#" className="text-gray-400 hover:text-gray-300" aria-label="Facebook">
-                            <FaFacebook size={24} />
-                        </a>
-                        <a href="#" className="text-gray-400 hover:text-gray-300" aria-label="Twitter">
-                            <FaTwitter size={24} />
-                        </a>
-                        <a href="#" className="text-gray-400 hover:text-gray-300" aria-label="Instagram">
-                            <FaInstagram size={24} />
-                        </a>
-                        <a href="#" className="text-gray-400 hover:text-gray-300" aria-label="LinkedIn">
-                            <FaLinkedin size={24} />
-                        </a>
-                    </div>
-                    <div className="mt-8 text-center">
-                        <p className="text-base text-gray-400">&copy; 2024 InventoryPro. All rights reserved.</p>
-                    </div>
-                </div>
-            </footer>
         </div>
     );
 };

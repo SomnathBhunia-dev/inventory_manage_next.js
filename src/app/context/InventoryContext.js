@@ -1,6 +1,6 @@
 "use client";
 import React, { createContext, useContext, useEffect, useReducer } from 'react';
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp, onSnapshot, collection, query, orderBy } from 'firebase/firestore';
 import { auth, firestore } from '../firebase';
 import { addShop, addCustomer, addPayment, updatePayments, updateDue } from '../models/firebaseUserData';
@@ -16,7 +16,8 @@ const initialState = {
         credit: 0,
         debit: 0,
         remian: 0
-    }
+    },
+    LoadingStatus: false
 };
 
 // Reducer function
@@ -32,37 +33,56 @@ const inventoryReducer = (state, action) => {
                 ...state,
                 Payments: [...action.payload]
             };
+        case "LOADING_ON":
+            return {
+                ...state,
+                LoadingStatus: true
+            }
+        case "LOADING_OFF":
+            return {
+                ...state,
+                LoadingStatus: false
+            }
         case 'UPDATE_PAYMENT':
-            const { totalDebits, totalCredits, remainingAmount } = action.payload;
+            const { totalDebits, totalCredits, remainingAmount, ordered, delivered, paid, creditsQty, debitsQty, orderQty, deliveredQty, paidQty } = action.payload;
             return {
                 ...state,
                 totalPayments: {
                     credit: totalCredits,
                     debit: totalDebits,
-                    remain: remainingAmount
+                    remain: remainingAmount,
+                    ordered,
+                    delivered,
+                    paid,
+                    orderQty,
+                    deliveredQty,
+                    paidQty,
+                    debitsQty,
+                    creditsQty
                 }
             };
-        case 'SIMPLIFY_PAYMENT':
-            const { debits, credits } = action.payload;
+        // case 'SIMPLIFY_PAYMENT':
+        //     const { debits, credits } = action.payload;
 
-            // Update Debits in inventory
-            const updatedDebitArray = state.inventory.map((debit) => {
-                const updatedDebit = debits.find(item => item.id === debit.id);
-                return updatedDebit ? { ...debit, ...updatedDebit } : debit;
-            });
+        //     // Update Debits in inventory
+        //     const updatedDebitArray = state.inventory.map((debit) => {
+        //         const updatedDebit = debits.find(item => item.id === debit.id);
+        //         return updatedDebit ? { ...debit, ...updatedDebit } : debit;
+        //     });
 
-            // Update Payments
-            const updatedCreditArray = state.Payments.map((credit) => {
-                const updatedCredit = credits.find(item => item.id === credit.id);
-                return updatedCredit ? { ...credit, ...updatedCredit } : credit;
-            });
+        //     // Update Payments
+        //     const updatedCreditArray = state.Payments.map((credit) => {
+        //         const updatedCredit = credits.find(item => item.id === credit.id);
+        //         return updatedCredit ? { ...credit, ...updatedCredit } : credit;
+        //     });
 
-            // Dispatch the new updated arrays to your store
-            return {
-                ...state,
-                inventory: updatedDebitArray,
-                Payments: updatedCreditArray,
-            };
+        //     // Dispatch the new updated arrays to your store
+        //     return {
+        //         ...state,
+        //         inventory: updatedDebitArray,
+        //         Payments: updatedCreditArray,
+        //     };
+
         case 'ADD_USER': {
             return {
                 ...state,
@@ -104,15 +124,48 @@ export const InventoryProvider = ({ children }) => {
     const updatePayment = () => {
         const totals = state.Payments.reduce(
             (acc, item) => {
-                if (item.type === 'debit') {
-                    acc.totalDebits += item.sale || 0;
-                } else if (item.type === 'credit') {
-                    acc.totalCredits += item.payment || 0;
+                switch (item.type) {
+                    case 'debit':
+                        acc.totalDebits += item.amount || 0;
+                        acc.totalDebitsQty++
+                        break;
+                    case 'credit':
+                        acc.totalCredits += item.amount || 0;
+                        acc.totalCreditsQty++
+                        break;
+                    default:
+                }
+
+                switch (item.status) {
+                    case 'Ordered':
+                        acc.ordered += item.amount || 0;
+                        acc.orderQty++
+                        break;
+                    case 'Delivered':
+                        acc.delivered += item.amount || 0;
+                        acc.deliveredQty++
+                        break;
+                    case 'Paid':
+                        acc.paid += item.amount || 0;
+                        acc.paidQty++
+                        break;
+                    default:
                 }
                 return acc;
             },
-            { totalDebits: 0, totalCredits: 0 }
-        )
+            {
+                totalDebits: 0,
+                totalCredits: 0,
+                ordered: 0,
+                orderQty: 0,
+                delivered: 0,
+                deliveredQty: 0,
+                paid: 0,
+                paidQty: 0,
+                totalCreditsQty: 0,
+                totalDebitsQty: 0
+            }
+        );
 
         // Calculate remaining amount
         const remainAmount = totals.totalDebits - totals.totalCredits
@@ -122,7 +175,15 @@ export const InventoryProvider = ({ children }) => {
             payload: {
                 totalDebits: Number(totals.totalDebits),
                 totalCredits: Number(totals.totalCredits),
+                ordered: Number(totals.ordered),
+                delivered: Number(totals.delivered),
+                paid: Number(totals.paid),
                 remainingAmount: Number(remainAmount),
+                orderQty: totals.orderQty,
+                deliveredQty: totals.deliveredQty,
+                paidQty: totals.paidQty,
+                creditsQty: totals.totalCreditsQty,
+                debitsQty: totals.totalDebitsQty,
             }
         });
     };
@@ -180,12 +241,23 @@ export const InventoryProvider = ({ children }) => {
         }
     };
 
+    const formatToRupee = (amount) => {
+        if (isNaN(amount)) return 0;
+
+        // Convert to Indian Rupee format
+        return new Intl.NumberFormat('en-IN', {
+            style: 'currency',
+            currency: 'INR',
+            minimumFractionDigits: 2,
+        }).format(amount);
+    };
+
     useEffect(() => {
         updatePayment()
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [state.Payments])
-    
+
     useEffect(() => {
         if (state.user?.uid !== undefined) {
             handleCustomerUpdate(state.totalPayments.remain)
@@ -213,16 +285,36 @@ export const InventoryProvider = ({ children }) => {
                         debit.remaining -= amountToAdjust;
                         credit.remaining -= amountToAdjust;
 
-                        // Update the status
+
+                        // Update the status and styles
                         if (credit.remaining === 0) {
-                            credit.status = 'Adjusted'; // Mark credit as adjusted
+                            credit.status = 'Cleared'; // Fully paid credit
+                            credit.style = {
+                                bgStyle: 'bg-purple-200',
+                                textStyle: 'text-purple-700'
+                            };
                         } else {
-                            credit.status = 'Partially Paid'; // Mark credit as partially paid
+                            credit.status = 'Adjusted'; // Partially paid or adjusted credit
+                            credit.style = {
+                                bgStyle: 'bg-yellow-200',
+                                textStyle: 'text-yellow-700'
+                            };
                         }
 
                         if (debit.remaining === 0) {
-                            debit.status = 'Paid'; // Mark debit as paid
+                            debit.status = 'Paid'; // Fully paid debit
+                            debit.style = {
+                                bgStyle: 'bg-blue-200',
+                                textStyle: 'text-blue-700'
+                            };
+                        } else {
+                            debit.status = 'Adjusted'; // Partially paid or adjusted debit
+                            debit.style = {
+                                bgStyle: 'bg-red-100',
+                                textStyle: 'text-black'
+                            };
                         }
+
                     }
 
                     // Remove the credit if it's fully adjusted
@@ -272,7 +364,16 @@ export const InventoryProvider = ({ children }) => {
             console.error("Error signing in with Google:", error);
         }
     };
-    // console.log(state.Payments)
+
+    const handleSignOut = async () => {
+        try {
+            await signOut(auth);
+            alert('Signed Out Successfully!!')
+        } catch (error) {
+            console.error("Error during sign out:", error);
+        }
+    };
+
     const fetchUser = async (i) => {
         const { uid } = i
         try {
@@ -295,7 +396,6 @@ export const InventoryProvider = ({ children }) => {
         // setShopName(''); // Clear the input field
     };
     const handleAddCustomer = async (i) => {
-        console.log(i)
         await addCustomer(state.user.uid, state.shop, i);
     };
     const handleCustomerUpdate = async (i) => {
@@ -308,7 +408,12 @@ export const InventoryProvider = ({ children }) => {
         await updatePayments(state.user.uid, state.shop, state.customer, i);
     };
 
+    const LoadingStatus = (i) => {
+        dispatch({ type: i ? "LOADING_ON" : "LOADING_OFF" })
+    }
+
     const listenToCustomerPayments = () => {
+        LoadingStatus(true)
         const paymentsRef = query(collection(firestore, `users/${state.user.uid}/shops/${state.shop}/customers/${state.customer}/payments`), orderBy('date', 'desc')) // Sort by timestamp in descending order );
 
         return onSnapshot(paymentsRef, (snapshot) => {
@@ -317,9 +422,11 @@ export const InventoryProvider = ({ children }) => {
                 ...doc.data(),
             }));
             storePayment(paymentsList); // Dispatch to Redux store
+            LoadingStatus(false)
         });
     };
     const listenToCustomerList = () => {
+        LoadingStatus(true)
         const paymentsRef = query(collection(firestore, `users/${state.user.uid}/shops/${state.shop}/customers`), orderBy('lastUpdated', 'desc')) // Sort by timestamp in descending order );
 
         return onSnapshot(paymentsRef, (snapshot) => {
@@ -328,11 +435,12 @@ export const InventoryProvider = ({ children }) => {
                 ...doc.data(),
             }));
             storeCustomerList(customerList); // Dispatch to Redux store
+            LoadingStatus(false)
         });
     };
     return (
         <InventoryContext.Provider
-            value={{ ...state, addItem, updatePayment, convertTimestampToDate, addPayment, siplexTxn, addUser, fetchUser, handleGoogleSignIn, handleAddShop, handleAddCustomer, handlePayment, listenToCustomerPayments, listenToCustomerList, timeFromNow, selectCustomer, handleCustomerUpdate }}
+            value={{ ...state, addItem, updatePayment, convertTimestampToDate, addPayment, siplexTxn, addUser, fetchUser, handleGoogleSignIn, handleSignOut, handleAddShop, handleAddCustomer, handlePayment, listenToCustomerPayments, listenToCustomerList, timeFromNow, selectCustomer, handleCustomerUpdate, formatToRupee }}
         >
             {children}
         </InventoryContext.Provider>

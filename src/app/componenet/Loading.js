@@ -1,10 +1,11 @@
 "use client"
 import { useState, useEffect } from "react";
 import { FiCheck } from "react-icons/fi";
+import { FaSpinner } from "react-icons/fa";
 import spinner from './icons8-spinning-circle.gif'
 import Image from "next/image";
 
-const LoadingAnimation = () => {
+export const LoadingAnimation = () => {
   const [loading, setLoading] = useState(true);
   const [success, setSuccess] = useState(false);
 
@@ -106,4 +107,30 @@ const LoadingAnimation = () => {
   );
 };
 
-export default LoadingAnimation;
+
+export const LoadingSpinner = ({ isLoading = true }) => {
+  if (!isLoading) return null;
+
+  return (
+    <div
+      className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 backdrop-blur-sm z-50"
+      role="alert"
+      aria-busy="true"
+    >
+      <div className="bg-white rounded-2xl p-8 shadow-2xl flex flex-col items-center gap-4">
+        <FaSpinner
+          className="animate-spin text-blue-600 w-16 h-16"
+          aria-label="Loading"
+        />
+        <div className="flex flex-col items-center gap-2">
+          <div className="h-2 w-24 bg-gray-200 rounded-full overflow-hidden">
+            <div className="h-full w-1/2 bg-blue-600 rounded-full animate-pulse"></div>
+          </div>
+          <p className="text-gray-600 font-medium text-sm animate-pulse">
+            Loading...
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};

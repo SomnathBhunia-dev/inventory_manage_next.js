@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useInventory } from '../context/InventoryContext';
 
-const Customer = ({ onClose }) => {
+const CustomerAdd = ({ onClose }) => {
     const [name, setName] = useState('')
     const [number, setNumber] = useState('')
 
@@ -53,4 +53,4 @@ const Customer = ({ onClose }) => {
     )
 }
 
-export default Customer
+export default CustomerAdd;

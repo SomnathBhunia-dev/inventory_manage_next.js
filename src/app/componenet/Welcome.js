@@ -4,6 +4,8 @@ import { FiLogOut } from "react-icons/fi";
 import ShopName from '../componenet/ShopName';
 import { useInventory } from "../context/InventoryContext";
 import Link from "next/link";
+import { LoadingSpinner } from "../componenet/Loading";
+
 
 
 const Welcome = ({ userName }) => {
@@ -11,7 +13,7 @@ const Welcome = ({ userName }) => {
     const [isFixed, setIsFixed] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
 
-    const { listenToCustomerList, customerList, selectCustomer, timeFromNow } = useInventory()
+    const { listenToCustomerList, customerList, selectCustomer, timeFromNow, handleSignOut, formatToRupee, LoadingStatus } = useInventory()
 
     useEffect(() => {
         setIsVisible(true);
@@ -29,10 +31,6 @@ const Welcome = ({ userName }) => {
             window.removeEventListener("scroll", handleScroll);
         };
     }, []);
-
-    const handleSignOut = () => {
-        console.log("User signed out");
-    };
 
     useEffect(() => {
         const unsubscribe = listenToCustomerList();
@@ -60,7 +58,7 @@ const Welcome = ({ userName }) => {
                                 className={`${isScrolled ? "text-xl" : "text-3xl"
                                     } whitespace-nowrap font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent transition-all duration-300`}
                             >
-                                Welcome back,
+                                Hi,
                                 <span className={`ml-2  ${isScrolled ? "text-lg" : "text-2xl max-sm:block"} font-semibold text-gray-800 transition-all duration-300`}>
                                     {userName}
                                 </span>
@@ -88,12 +86,9 @@ const Welcome = ({ userName }) => {
                     {isFixed && (
                         <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-b-lg" />
                     )}
-                    {/* {isFixed && (
-                        <ShopList />
-
-                    )} */}
                 </div>
             </div>
+            <LoadingSpinner isLoading={LoadingStatus} />
             <div className={`${isFixed ? "mt-40" : ""} p-6 pt-40 md:p-20`}>
                 <div className="max-w-3xl mx-auto space-y-6">
                     {customerList.length !== 0 ?
@@ -116,10 +111,10 @@ const Welcome = ({ userName }) => {
                                             <div className="text-right">
                                                 {customer.Fund >= 0
                                                     ? <div className="text-base sm:text-xl font-bold text-red-500">
-                                                        {Math.abs(customer.Fund)} <p className="text-sm text-gray-500">Due Amount</p>
+                                                        {formatToRupee(Math.abs(customer.Fund))} <p className="text-sm text-gray-500">Due Amount</p>
                                                     </div>
                                                     : <div className="text-base sm:text-xl font-bold text-green-500">
-                                                        {Math.abs(customer.Fund)} <p className="text-sm text-gray-500">Extra Amount</p>
+                                                        {formatToRupee(Math.abs(customer.Fund))} <p className="text-sm text-gray-500">Extra Amount</p>
                                                     </div>
                                                 }
                                             </div>

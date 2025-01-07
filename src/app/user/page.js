@@ -5,7 +5,7 @@ import { onAuthStateChanged, setPersistence, browserLocalPersistence } from "fir
 import { auth } from "../firebase";
 import { useRouter } from "next/navigation";
 import { useInventory } from "../context/InventoryContext";
-import LoadingAnimation from "../componenet/Loading";
+import { LoadingAnimation } from "../componenet/Loading";
 import { FcGoogle } from "react-icons/fc";
 
 
@@ -59,7 +59,7 @@ const Google = () => {
             </p>
             <button
               onClick={handleGoogleSignIn}
-              className="w-full flex items-center justify-center space-x-2 px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-300 transition-colors duration-200"
+              className="w-full flex items-center justify-center space-x-2 px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-300 transition-colors duration-200 text-gray-700"
             >
               <FcGoogle className="w-5 h-5" />
               <span>Sign in with Google</span>
