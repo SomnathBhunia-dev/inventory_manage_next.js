@@ -61,28 +61,6 @@ const inventoryReducer = (state, action) => {
                     creditsQty
                 }
             };
-        // case 'SIMPLIFY_PAYMENT':
-        //     const { debits, credits } = action.payload;
-
-        //     // Update Debits in inventory
-        //     const updatedDebitArray = state.inventory.map((debit) => {
-        //         const updatedDebit = debits.find(item => item.id === debit.id);
-        //         return updatedDebit ? { ...debit, ...updatedDebit } : debit;
-        //     });
-
-        //     // Update Payments
-        //     const updatedCreditArray = state.Payments.map((credit) => {
-        //         const updatedCredit = credits.find(item => item.id === credit.id);
-        //         return updatedCredit ? { ...credit, ...updatedCredit } : credit;
-        //     });
-
-        //     // Dispatch the new updated arrays to your store
-        //     return {
-        //         ...state,
-        //         inventory: updatedDebitArray,
-        //         Payments: updatedCreditArray,
-        //     };
-
         case 'ADD_USER': {
             return {
                 ...state,
@@ -168,7 +146,7 @@ export const InventoryProvider = ({ children }) => {
         );
 
         // Calculate remaining amount
-        const remainAmount = totals.totalDebits - totals.totalCredits
+        const remainAmount = (totals.paid + totals.delivered  )- totals.totalCredits
 
         dispatch({
             type: 'UPDATE_PAYMENT',
@@ -308,7 +286,7 @@ export const InventoryProvider = ({ children }) => {
                                 textStyle: 'text-blue-700'
                             };
                         } else {
-                            debit.status = 'Adjusted'; // Partially paid or adjusted debit
+                            debit.status = 'Delivered'; // Partially paid or adjusted debit
                             debit.style = {
                                 bgStyle: 'bg-red-100',
                                 textStyle: 'text-black'
@@ -438,9 +416,22 @@ export const InventoryProvider = ({ children }) => {
             LoadingStatus(false)
         });
     };
+
+    const groupByDate = (i) => {
+        return i.reduce((acc, item) => {
+            const dateKey = convertTimestampToDate(item.date?.seconds);
+            if (!acc[dateKey]) {
+                acc[dateKey] = [];
+            }
+            acc[dateKey].push(item);
+            return acc;
+        }, {});
+    };
+
+
     return (
         <InventoryContext.Provider
-            value={{ ...state, addItem, updatePayment, convertTimestampToDate, addPayment, siplexTxn, addUser, fetchUser, handleGoogleSignIn, handleSignOut, handleAddShop, handleAddCustomer, handlePayment, listenToCustomerPayments, listenToCustomerList, timeFromNow, selectCustomer, handleCustomerUpdate, formatToRupee }}
+            value={{ ...state, addItem, updatePayment, convertTimestampToDate, addPayment, siplexTxn, addUser, fetchUser, handleGoogleSignIn, handleSignOut, handleAddShop, handleAddCustomer, handlePayment, listenToCustomerPayments, listenToCustomerList, timeFromNow, selectCustomer, handleCustomerUpdate, formatToRupee, groupByDate }}
         >
             {children}
         </InventoryContext.Provider>

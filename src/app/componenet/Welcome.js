@@ -59,7 +59,7 @@ const Welcome = ({ userName }) => {
                                     } whitespace-nowrap font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent transition-all duration-300`}
                             >
                                 Hi,
-                                <span className={`ml-2  ${isScrolled ? "text-lg" : "text-2xl max-sm:block"} font-semibold text-gray-800 transition-all duration-300`}>
+                                <span className={`md:ml-2  ${isScrolled ? "text-lg" : "text-2xl max-sm:block"} font-semibold text-gray-800 transition-all duration-300`}>
                                     {userName}
                                 </span>
                             </h1>

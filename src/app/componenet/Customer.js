@@ -17,7 +17,7 @@ const CustomerAdd = ({ onClose }) => {
         onClose()
     };
     return (
-        <form onSubmit={storeCustomer} className="mb-4 p-4 bg-white shadow-md rounded-lg max-w-md mx-auto">
+        <form onSubmit={storeCustomer} className="mb-4 p-4 bg-white shadow-md text-gray-700 rounded-lg max-w-md mx-auto">
             <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                     Customer Name

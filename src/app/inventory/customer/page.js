@@ -5,6 +5,7 @@ import { LoadingSpinner } from "@/app/componenet/Loading";
 import Modal from "@/app/componenet/Modal";
 import Payment from "@/app/componenet/Payment";
 import { useInventory } from "@/app/context/InventoryContext";
+import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from "react";
 import { FaPlus, FaDollarSign } from "react-icons/fa";
 
@@ -13,13 +14,24 @@ const SlugPage = () => {
     const [showSaleModal, setShowSaleModal] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
 
-    const { listenToCustomerPayments, LoadingStatus } = useInventory()
+    const { listenToCustomerPayments, LoadingStatus, user } = useInventory()
 
     useEffect(() => {
         const unsubscribe = listenToCustomerPayments();
         return () => unsubscribe(); // Cleanup listener on component unmount
     }, []);
 
+    const router = useRouter();
+  
+    useEffect(() => {
+      if (!user || Object.keys(user).length === 0 || !user.uid) {
+        const timer = setTimeout(() => {
+          router.push('/user');
+        });
+        return () => clearTimeout(timer);
+      }
+    }, [user, router]);
+  
     return (
         <>
         <LoadingSpinner isLoading={LoadingStatus} />
